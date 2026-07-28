@@ -33,6 +33,7 @@ export default function App() {
   const [execTime, setExecTime] = useState(0)
   const [perfWarning, setPerfWarning] = useState('')
   const [selectedPatternId, setSelectedPatternId] = useState<string | null>(null)
+  const [matchIndex, setMatchIndex] = useState(0)
 
   // Performance warning on pattern change
   useEffect(() => {
@@ -207,6 +208,8 @@ export default function App() {
               regexOk={regex.ok}
               replaceOutput={replaceOutput}
               replaceMode={replaceMode}
+              matchIndex={matchIndex}
+              onMatchIndexChange={setMatchIndex}
             />
 
             <MatchDetails matches={matches} />

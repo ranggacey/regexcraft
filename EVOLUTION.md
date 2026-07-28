@@ -1,5 +1,18 @@
 # EVOLUTION.md — RegexCraft
 
+## v0.9.0 — Match Navigation + Active Highlight
+
+### New features
+- **Match Navigation**: Arrow buttons to cycle through multiple matches. Shows current/total count (e.g., "2/5").
+- **Active Match Highlight**: Selected match highlighted in cyan with ring effect, other matches remain yellow. Helps focus on specific match when many exist.
+
+### Code quality
+- Added `matchIndex` state in App.tsx, passed to ResultsDisplay.
+- `buildHighlighted()` now accepts `activeIndex` param to apply different styling.
+
+### Performance
+- Build: 234 KB JS (main), 157 KB JS (visualizer), 21 KB CSS.
+
 ## v0.8.0 — Regex Syntax Linter
 
 ### New features

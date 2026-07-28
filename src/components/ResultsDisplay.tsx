@@ -7,9 +7,26 @@ interface Props {
   regexOk: boolean
   replaceOutput?: string | null
   replaceMode?: boolean
+  matchIndex?: number
+  onMatchIndexChange?: (index: number) => void
 }
 
-export default function ResultsDisplay({ matches, testStr, regexOk, replaceOutput, replaceMode }: Props) {
+export default function ResultsDisplay({ matches, testStr, regexOk, replaceOutput, replaceMode, matchIndex = 0, onMatchIndexChange }: Props) {
+  const hasMatches = matches && matches.length > 0
+  const canNavigate = hasMatches && matches.length > 1
+
+  const goPrev = () => {
+    if (canNavigate && onMatchIndexChange) {
+      onMatchIndexChange(matchIndex > 0 ? matchIndex - 1 : matches.length - 1)
+    }
+  }
+
+  const goNext = () => {
+    if (canNavigate && onMatchIndexChange) {
+      onMatchIndexChange(matchIndex < matches.length - 1 ? matchIndex + 1 : 0)
+    }
+  }
+
   if (replaceMode && replaceOutput !== null) {
     return (
       <section className="space-y-1.5">
@@ -32,16 +49,39 @@ export default function ResultsDisplay({ matches, testStr, regexOk, replaceOutpu
     )
   }
 
-  const highlighted = buildHighlighted(testStr, matches)
+  const highlighted = buildHighlighted(testStr, matches, matchIndex)
 
   return (
     <section className="space-y-1.5">
       <div className="flex items-center justify-between">
         <label className="text-xs text-zinc-500 uppercase tracking-wider">Matches</label>
         {matches && (
-          <span className="text-xs text-zinc-500">
-            {matches.length} match{matches.length !== 1 ? 'es' : ''}
-          </span>
+          <div className="flex items-center gap-2">
+            {canNavigate && (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={goPrev}
+                  className="px-1.5 py-0.5 text-xs rounded bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-zinc-200 transition-colors"
+                  title="Previous match"
+                >
+                  ←
+                </button>
+                <span className="text-xs text-zinc-500 font-mono">
+                  {matchIndex + 1}/{matches.length}
+                </span>
+                <button
+                  onClick={goNext}
+                  className="px-1.5 py-0.5 text-xs rounded bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-zinc-200 transition-colors"
+                  title="Next match"
+                >
+                  →
+                </button>
+              </div>
+            )}
+            <span className="text-xs text-zinc-500">
+              {matches.length} match{matches.length !== 1 ? 'es' : ''}
+            </span>
+          </div>
         )}
       </div>
       <div
@@ -52,15 +92,16 @@ export default function ResultsDisplay({ matches, testStr, regexOk, replaceOutpu
   )
 }
 
-function buildHighlighted(testStr: string, matches: MatchResult[] | null): string {
+function buildHighlighted(testStr: string, matches: MatchResult[] | null, activeIndex: number = -1): string {
   if (!matches?.length) return ''
   let result = ''
   let last = 0
-  for (const m of matches) {
+  matches.forEach((m, idx) => {
     result += escapeHtml(testStr.slice(last, m.index))
-    result += `<mark class="bg-yellow-300/40 text-yellow-100 rounded px-0.5">${escapeHtml(m.full)}</mark>`
+    const isActive = idx === activeIndex
+    result += `<mark class="${isActive ? 'bg-cyan-400/60 text-white ring-2 ring-cyan-300' : 'bg-yellow-300/40 text-yellow-100'} rounded px-0.5">${escapeHtml(m.full)}</mark>`
     last = m.index + m.full.length
-  }
+  })
   result += escapeHtml(testStr.slice(last))
   return result
 }
