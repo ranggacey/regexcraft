@@ -1,5 +1,26 @@
 # EVOLUTION.md — RegexCraft
 
+## v0.3.0 — Permalink Sharing + SEO + Polish
+
+### New features
+- **Permalink/Share**: State (pattern, flags, test string) encoded in URL hash. Share button copies full URL. State syncs to hash on every change.
+- **Load from hash**: Opening a shared link restores exact pattern, flags, and test string.
+
+### SEO
+- OG meta tags (title, description, type, URL)
+- Twitter card tags
+- Meta description
+
+### UI/UX
+- Share button in header nav (🔗 Share)
+- Transitions on hover states, button feedback
+- Copy link confirmation (✓ link copied)
+
+### Performance
+- Build: 205 KB JS (stable), 17 KB CSS (stable)
+- Hash sync via `history.replaceState` (no page reload)
+- Base64-urlsafe encoding for compact URLs
+
 ## v0.2.0 — Refactor + Cheat Sheet + Replace Mode + Explainer
 
 ### Breaking changes

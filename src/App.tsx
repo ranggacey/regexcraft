@@ -1,5 +1,6 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import type { MatchResult } from './types'
+import { encodeState, decodeState } from './lib/utils'
 import PatternInput from './components/PatternInput'
 import TestStringInput from './components/TestStringInput'
 import ResultsDisplay from './components/ResultsDisplay'
@@ -7,14 +8,31 @@ import MatchDetails from './components/MatchDetails'
 import RegexExplainer from './components/RegexExplainer'
 import CheatSheet from './components/CheatSheet'
 
+function loadFromHash(): { pattern: string; flags: string; testStr: string } | null {
+  const hash = location.hash.replace(/^#/, '')
+  if (!hash) return null
+  return decodeState(hash)
+}
+
 export default function App() {
-  const [pattern, setPattern] = useState('(\\w+)@(\\w+\\.\\w+)')
-  const [flags, setFlags] = useState('gi')
-  const [testStr, setTestStr] = useState(`hello@example.com\nuser@domain.org\nnot-an-email@`)
+  const saved = useRef(loadFromHash())
+  const [pattern, setPattern] = useState(saved.current?.pattern ?? '(\\w+)@(\\w+\\.\\w+)')
+  const [flags, setFlags] = useState(saved.current?.flags ?? 'gi')
+  const [testStr, setTestStr] = useState(saved.current?.testStr ?? 'hello@example.com\nuser@domain.org\nnot-an-email@')
   const [copyOk, setCopyOk] = useState(false)
+  const [permalinkOk, setPermalinkOk] = useState(false)
   const [replaceMode, setReplaceMode] = useState(false)
   const [replaceStr, setReplaceStr] = useState('[$1]')
   const [cheatOpen, setCheatOpen] = useState(false)
+
+  // Sync state to URL hash
+  useEffect(() => {
+    const enc = encodeState(pattern, flags, testStr)
+    const newHash = '#' + enc
+    if (location.hash !== newHash) {
+      history.replaceState(null, '', newHash)
+    }
+  }, [pattern, flags, testStr])
 
   const regex = useMemo(() => {
     try {
@@ -58,6 +76,13 @@ export default function App() {
     })
   }, [pattern, flags])
 
+  const copyPermalink = useCallback(() => {
+    navigator.clipboard?.writeText(location.href).then(() => {
+      setPermalinkOk(true)
+      setTimeout(() => setPermalinkOk(false), 1500)
+    })
+  }, [])
+
   const selectPattern = useCallback((p: string) => {
     setPattern(p)
   }, [])
@@ -86,6 +111,13 @@ export default function App() {
             title="Regex cheat sheet"
           >
             📖 Cheats
+          </button>
+          <button
+            onClick={copyPermalink}
+            className="px-2 py-0.5 text-xs rounded border border-zinc-700 bg-zinc-900 text-zinc-400 hover:text-zinc-200 transition-colors"
+            title="Copy shareable link (all state saved in URL)"
+          >
+            {permalinkOk ? '✓ link copied' : '🔗 Share'}
           </button>
         </nav>
       </header>
