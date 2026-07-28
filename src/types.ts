@@ -4,6 +4,14 @@ export interface MatchResult {
   index: number
 }
 
+export interface SavedPattern {
+  id: string
+  name: string
+  pattern: string
+  flags: string
+  createdAt: number
+}
+
 export type RegexResult =
   | { ok: true; re: RegExp; error: null }
   | { ok: false; re: null; error: string }
@@ -21,6 +29,7 @@ export const AVAILABLE_FLAGS: FlagDef[] = [
   { flag: 's', name: 'Dotall', desc: '. matches newlines' },
   { flag: 'u', name: 'Unicode', desc: 'full Unicode support' },
   { flag: 'y', name: 'Sticky', desc: 'lastIndex sticky matching' },
+  { flag: 'd', name: 'Indices', desc: 'match indices (ES2022)' },
 ]
 
 export const COMMON_PATTERNS = [

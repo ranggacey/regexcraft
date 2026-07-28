@@ -14,10 +14,20 @@ export default function TestStringInput({ testStr, setTestStr, replaceMode, repl
         value={testStr}
         onChange={e => setTestStr(e.target.value)}
         rows={6}
+        id="test-string-input"
         className="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-sm outline-none focus:border-cyan-500 transition-colors font-mono resize-y"
         spellCheck={false}
         placeholder="Enter test text here..."
       />
+      <div className="flex justify-end">
+        <button
+          onClick={() => setTestStr('')}
+          className="text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors"
+          title="Clear test string"
+        >
+          ✕ clear
+        </button>
+      </div>
       {replaceMode && (
         <div className="flex gap-2 items-center">
           <span className="text-xs text-zinc-500 uppercase tracking-wider">Replace With</span>

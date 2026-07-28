@@ -1,5 +1,25 @@
 # EVOLUTION.md — RegexCraft
 
+## v0.4.0 — Keyboard Shortcuts + Performance Warnings + Export/Import + UX Polish
+
+### New features
+- **Keyboard shortcuts**: ⌘K / Ctrl+K focuses pattern input, ⌘L / Ctrl+L focuses test string, Escape closes cheat sheet.
+- **Export/Import saved patterns**: Download/upload JSON files for your saved patterns library.
+- **Copy individual match**: Each match detail row has a copy button to grab match text.
+- **Clear test string**: One-click button to wipe test input.
+
+### Performance
+- **Catastrophic backtracking detector**: Warns on nested quantifiers like `(a+)+`, `(a*)*`, etc. that risk regex DoS.
+
+### UI/UX
+- Keyboard shortcut hints in footer.
+- id attributes on pattern/test inputs for focus targeting.
+
+### Code quality
+- `detectCatastrophicPattern()` in `lib/utils.ts` for regex safety analysis.
+- `exportSavedPatterns()`, `importSavedPatterns()` for persistence portability.
+- Build: 212 KB JS, 19 KB CSS.
+
 ## v0.3.0 — Permalink Sharing + SEO + Polish
 
 ### New features

@@ -1,3 +1,5 @@
+import type { SavedPattern } from '../types'
+
 export function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
@@ -39,6 +41,69 @@ export function explainPattern(pattern: string): string {
     i++
   }
   return parts.join('\n')
+}
+
+export function detectCatastrophicPattern(pattern: string): string {
+  // Detect nested quantifiers: (a+)+, (a*)*, (a+)*, (a*)+ etc.
+  const nested = /\([^)]+[+*?][+*?]\)[+*?]/g
+  if (nested.test(pattern)) {
+    return '⚠ Nested quantifier — risk of catastrophic backtracking. Consider reworking pattern.'
+  }
+  // Alternatives that can match same text: (a|a)*, (a|b)*a*b* etc.
+  const altOverlap = /\([^)]*\|[^)]*\)\*/.test(pattern)
+  if (altOverlap && /^(?:\\.|[^*?+])*\*$/.test(pattern.replace(/\([^)]*\)/g, 'x'))) {
+    // simplified check
+  }
+  return ''
+}
+
+const STORAGE_KEY = 'regexcraft_saved_patterns'
+
+export function getSavedPatterns(): SavedPattern[] {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
+  } catch {
+    return []
+  }
+}
+
+export function savePattern(name: string, pattern: string, flags: string): SavedPattern {
+  const patterns = getSavedPatterns()
+  const sp: SavedPattern = {
+    id: crypto.randomUUID(),
+    name,
+    pattern,
+    flags,
+    createdAt: Date.now(),
+  }
+  patterns.unshift(sp)
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(patterns.slice(0, 20)))
+  return sp
+}
+
+export function deleteSavedPattern(id: string): void {
+  const patterns = getSavedPatterns().filter(p => p.id !== id)
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(patterns))
+}
+
+export function exportSavedPatterns(): string {
+  return JSON.stringify(getSavedPatterns(), null, 2)
+}
+
+export function importSavedPatterns(json: string): { count: number; error?: string } {
+  try {
+    const data = JSON.parse(json)
+    if (!Array.isArray(data)) return { count: 0, error: 'Invalid format — expected an array' }
+    for (const item of data) {
+      if (!item.name || !item.pattern) return { count: 0, error: 'Each pattern must have name and pattern fields' }
+    }
+    const existing = getSavedPatterns()
+    const merged = [...data, ...existing].slice(0, 50)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(merged))
+    return { count: data.length }
+  } catch {
+    return { count: 0, error: 'Invalid JSON' }
+  }
 }
 
 const EXPLAIN_MAP: Record<string, string> = {

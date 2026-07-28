@@ -1,12 +1,13 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import type { MatchResult } from './types'
-import { encodeState, decodeState } from './lib/utils'
+import { encodeState, decodeState, detectCatastrophicPattern } from './lib/utils'
 import PatternInput from './components/PatternInput'
 import TestStringInput from './components/TestStringInput'
 import ResultsDisplay from './components/ResultsDisplay'
 import MatchDetails from './components/MatchDetails'
 import RegexExplainer from './components/RegexExplainer'
 import CheatSheet from './components/CheatSheet'
+import SavedPatterns from './components/SavedPatterns'
 
 function loadFromHash(): { pattern: string; flags: string; testStr: string } | null {
   const hash = location.hash.replace(/^#/, '')
@@ -24,6 +25,37 @@ export default function App() {
   const [replaceMode, setReplaceMode] = useState(false)
   const [replaceStr, setReplaceStr] = useState('[$1]')
   const [cheatOpen, setCheatOpen] = useState(false)
+  const [execTime, setExecTime] = useState(0)
+  const [perfWarning, setPerfWarning] = useState('')
+
+  // Performance warning on pattern change
+  useEffect(() => {
+    if (pattern) {
+      setPerfWarning(detectCatastrophicPattern(pattern))
+    } else {
+      setPerfWarning('')
+    }
+  }, [pattern])
+
+  // Keyboard shortcuts: Cmd+K -> focus pattern, Cmd+L -> focus test string, Escape -> close cheat
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        document.getElementById('pattern-input')?.focus()
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'l') {
+        e.preventDefault()
+        document.getElementById('test-string-input')?.focus()
+      }
+      if (e.key === 'Escape' && cheatOpen) {
+        e.preventDefault()
+        setCheatOpen(false)
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [cheatOpen])
 
   // Sync state to URL hash
   useEffect(() => {
@@ -44,6 +76,7 @@ export default function App() {
 
   const matches = useMemo(() => {
     if (!regex.ok || !testStr) return null
+    const t0 = performance.now()
     const ms: MatchResult[] = []
     const re = new RegExp(regex.re.source, regex.re.flags.includes('g') ? regex.re.flags : regex.re.flags + 'g')
     let m: RegExpExecArray | null
@@ -53,6 +86,7 @@ export default function App() {
       ms.push({ full: m[0], groups, index: m.index })
       if (!re.global) break
     }
+    setExecTime(Math.round(performance.now() - t0))
     return ms
   }, [regex, testStr])
 
@@ -85,6 +119,11 @@ export default function App() {
 
   const selectPattern = useCallback((p: string) => {
     setPattern(p)
+  }, [])
+
+  const selectSavedPattern = useCallback((p: string, f: string) => {
+    setPattern(p)
+    setFlags(f)
   }, [])
 
   return (
@@ -137,6 +176,12 @@ export default function App() {
               onToggleFlag={toggleFlag}
             />
 
+            {perfWarning && (
+              <div className="bg-amber-900/20 border border-amber-700/40 rounded px-3 py-2 text-xs text-amber-300" role="alert">
+                {perfWarning}
+              </div>
+            )}
+
             <TestStringInput
               testStr={testStr}
               setTestStr={setTestStr}
@@ -162,12 +207,14 @@ export default function App() {
               <RegexExplainer pattern={pattern} regexOk={regex.ok} />
             )}
 
-            {/* Performance summary */}
+            <SavedPatterns onSelect={selectSavedPattern} />
+
+            {/* Stats */}
             <section className="space-y-1.5">
               <label className="text-xs text-zinc-500 uppercase tracking-wider">Stats</label>
               <div className="bg-zinc-900 border border-zinc-800 rounded px-3 py-2 text-xs text-zinc-400 space-y-1">
                 <div className="flex justify-between">
-                  <span>Pattern length</span>
+                  <span>Pattern</span>
                   <span className="text-zinc-300">{pattern.length} chars</span>
                 </div>
                 <div className="flex justify-between">
@@ -175,10 +222,16 @@ export default function App() {
                   <span className="text-zinc-300">{testStr.length} chars, {testStr.split('\n').length} lines</span>
                 </div>
                 {matches && (
-                  <div className="flex justify-between">
-                    <span>Matches found</span>
-                    <span className="text-cyan-300">{matches.length}</span>
-                  </div>
+                  <>
+                    <div className="flex justify-between">
+                      <span>Matches</span>
+                      <span className="text-cyan-300">{matches.length}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Exec time</span>
+                      <span className="text-zinc-300">{execTime}ms</span>
+                    </div>
+                  </>
                 )}
               </div>
             </section>
@@ -215,6 +268,7 @@ export default function App() {
 
         <footer className="mt-8 pt-4 border-t border-zinc-800 flex flex-wrap items-center justify-between gap-2 text-[10px] text-zinc-700">
           <span>RegexCraft</span>
+          <span className="hidden sm:inline">⌘K focus pattern · ⌘L focus test · Esc close</span>
           <span>React + TypeScript + Vite + Tailwind v4</span>
           <span>Zero regex libs — pure JS RegExp</span>
         </footer>

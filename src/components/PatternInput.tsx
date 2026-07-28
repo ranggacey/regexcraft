@@ -11,7 +11,7 @@ interface Props {
   onToggleFlag: (f: string) => void
 }
 
-const ALL_FLAGS = ['g', 'i', 'm', 's', 'u', 'y'] as const
+const ALL_FLAGS = ['g', 'i', 'm', 's', 'u', 'y', 'd'] as const
 
 export default function PatternInput({ pattern, setPattern, flags, setFlags, regex, copyOk, onCopy, onToggleFlag }: Props) {
   return (
@@ -24,6 +24,7 @@ export default function PatternInput({ pattern, setPattern, flags, setFlags, reg
           value={pattern}
           onChange={e => setPattern(e.target.value)}
           placeholder="regex pattern"
+          id="pattern-input"
           className="flex-1 bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-sm outline-none focus:border-cyan-500 transition-colors font-mono"
           spellCheck={false}
         />
