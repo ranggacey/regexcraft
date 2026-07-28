@@ -1,5 +1,13 @@
 # EVOLUTION.md — RegexCraft
 
+## v0.5.0 — Regex Benchmark Mode
+
+### New features
+- **Regex Benchmark Mode**: Empirical performance testing panel in sidebar. Runs regex replace N times (configurable 100–100k iterations), shows total time, per-iteration nanoseconds, ops/sec throughput. Includes warmup runs for JIT fairness. Helps detect slow patterns in practice, complementing static catastrophic-backtracking warning.
+
+### Performance
+- Build: 215 KB JS, 19 KB CSS.
+
 ## v0.4.0 — Keyboard Shortcuts + Performance Warnings + Export/Import + UX Polish
 
 ### New features

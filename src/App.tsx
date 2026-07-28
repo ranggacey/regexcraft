@@ -8,6 +8,7 @@ import MatchDetails from './components/MatchDetails'
 import RegexExplainer from './components/RegexExplainer'
 import CheatSheet from './components/CheatSheet'
 import SavedPatterns from './components/SavedPatterns'
+import BenchmarkMode from './components/BenchmarkMode'
 
 function loadFromHash(): { pattern: string; flags: string; testStr: string } | null {
   const hash = location.hash.replace(/^#/, '')
@@ -263,6 +264,14 @@ export default function App() {
                 Full cheat sheet →
               </button>
             </section>
+
+            <BenchmarkMode
+              regex={regex}
+              pattern={pattern}
+              flags={flags}
+              testStr={testStr}
+              replaceMode={replaceMode}
+            />
           </div>
         </div>
 
