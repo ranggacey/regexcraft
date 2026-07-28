@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef, Suspense, lazy } from 'react'
 import type { MatchResult } from './types'
-import { encodeState, decodeState, detectCatastrophicPattern } from './lib/utils'
+import { encodeState, decodeState, detectCatastrophicPattern, getSavedPatterns } from './lib/utils'
 import PatternInput from './components/PatternInput'
 import TestStringInput from './components/TestStringInput'
 import ResultsDisplay from './components/ResultsDisplay'
@@ -9,6 +9,7 @@ import RegexExplainer from './components/RegexExplainer'
 import CheatSheet from './components/CheatSheet'
 import SavedPatterns from './components/SavedPatterns'
 import TestCases from './components/TestCases'
+import TestCaseRunner from './components/TestCaseRunner'
 import BenchmarkMode from './components/BenchmarkMode'
 
 const RegexVisualizer = lazy(() => import('./components/RegexVisualizer'))
@@ -31,6 +32,7 @@ export default function App() {
   const [cheatOpen, setCheatOpen] = useState(false)
   const [execTime, setExecTime] = useState(0)
   const [perfWarning, setPerfWarning] = useState('')
+  const [selectedPatternId, setSelectedPatternId] = useState<string | null>(null)
 
   // Performance warning on pattern change
   useEffect(() => {
@@ -235,6 +237,16 @@ export default function App() {
               regex={{ ok: regex.ok }}
               testStr={testStr}
               matches={matches}
+              selectedPatternId={selectedPatternId}
+              onSelectPattern={setSelectedPatternId}
+            />
+
+            <TestCaseRunner
+              regex={regex}
+              pattern={pattern}
+              flags={flags}
+              testCases={getSavedPatterns().find(p => p.id === selectedPatternId)?.testCases ?? []}
+              onLoadTestCase={tc => setTestStr(tc.testStr)}
             />
 
             {/* Stats */}

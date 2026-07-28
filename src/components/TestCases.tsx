@@ -6,11 +6,12 @@ interface Props {
   regex: { ok: boolean }
   testStr: string
   matches: { length: number } | null
+  selectedPatternId: string | null
+  onSelectPattern: (id: string | null) => void
 }
 
-export default function TestCases({ regex, testStr, matches }: Props) {
+export default function TestCases({ regex, testStr, matches, selectedPatternId, onSelectPattern }: Props) {
   const [patterns, setPatterns] = useState<SavedPattern[]>([])
-  const [selectedPatternId, setSelectedPatternId] = useState<string | null>(null)
   const [showAdd, setShowAdd] = useState(false)
   const [newName, setNewName] = useState('')
   const [newTestStr, setNewTestStr] = useState(testStr)
@@ -46,7 +47,7 @@ export default function TestCases({ regex, testStr, matches }: Props) {
       <div className="flex items-center justify-between">
         <label className="text-xs text-zinc-500 uppercase tracking-wider">Test Cases</label>
         <button
-          onClick={() => { setShowAdd(s => !s); if (!selectedPatternId && patterns[0]) setSelectedPatternId(patterns[0].id) }}
+          onClick={() => { setShowAdd(s => !s); if (!selectedPatternId && patterns[0]) onSelectPattern(patterns[0].id) }}
           className={`text-[10px] transition-colors ${showAdd ? 'text-cyan-400' : 'text-zinc-600 hover:text-zinc-400'}`}
         >
           {showAdd ? 'Cancel' : '+ Add'}
@@ -60,7 +61,7 @@ export default function TestCases({ regex, testStr, matches }: Props) {
           <>
             <select
               value={selectedPatternId || ''}
-              onChange={e => setSelectedPatternId(e.target.value || null)}
+              onChange={e => onSelectPattern(e.target.value || null)}
               className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs outline-none focus:border-cyan-500 transition-colors text-zinc-100"
             >
               <option value="" disabled>Select a saved pattern…</option>
