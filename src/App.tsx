@@ -1,12 +1,20 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
+import type { MatchResult } from './types'
+import PatternInput from './components/PatternInput'
+import TestStringInput from './components/TestStringInput'
+import ResultsDisplay from './components/ResultsDisplay'
+import MatchDetails from './components/MatchDetails'
+import RegexExplainer from './components/RegexExplainer'
+import CheatSheet from './components/CheatSheet'
 
-function App() {
+export default function App() {
   const [pattern, setPattern] = useState('(\\w+)@(\\w+\\.\\w+)')
   const [flags, setFlags] = useState('gi')
-  const [testStr, setTestStr] = useState(`hello@example.com
-user@domain.org
-not-an-email@`)
+  const [testStr, setTestStr] = useState(`hello@example.com\nuser@domain.org\nnot-an-email@`)
   const [copyOk, setCopyOk] = useState(false)
+  const [replaceMode, setReplaceMode] = useState(false)
+  const [replaceStr, setReplaceStr] = useState('[$1]')
+  const [cheatOpen, setCheatOpen] = useState(false)
 
   const regex = useMemo(() => {
     try {
@@ -18,11 +26,11 @@ not-an-email@`)
 
   const matches = useMemo(() => {
     if (!regex.ok || !testStr) return null
-    const ms: { full: string; groups: (string | undefined)[]; index: number }[] = []
+    const ms: MatchResult[] = []
     const re = new RegExp(regex.re.source, regex.re.flags.includes('g') ? regex.re.flags : regex.re.flags + 'g')
     let m: RegExpExecArray | null
     while ((m = re.exec(testStr)) !== null) {
-      const groups = []
+      const groups: (string | undefined)[] = []
       for (let i = 1; i < m.length; i++) groups.push(m[i])
       ms.push({ full: m[0], groups, index: m.index })
       if (!re.global) break
@@ -30,150 +38,161 @@ not-an-email@`)
     return ms
   }, [regex, testStr])
 
-  const highlighted = useMemo(() => {
-    if (!regex.ok || !testStr || !matches?.length) return testStr
-    let result = ''
-    let last = 0
-    for (const m of matches) {
-      result += escapeHtml(testStr.slice(last, m.index))
-      result += `<mark class="bg-yellow-300/40 text-yellow-100 rounded px-0.5">${escapeHtml(m.full)}</mark>`
-      last = m.index + m.full.length
+  const replaceOutput = useMemo(() => {
+    if (!replaceMode || !regex.ok || !testStr) return null
+    try {
+      return testStr.replace(regex.re, replaceStr)
+    } catch {
+      return '⚠ Invalid replacement string'
     }
-    result += escapeHtml(testStr.slice(last))
-    return result
-  }, [regex.ok, testStr, matches])
+  }, [replaceMode, regex.ok, regex.re, testStr, replaceStr])
 
-  function toggleFlag(f: string) {
+  const toggleFlag = useCallback((f: string) => {
     setFlags(prev => prev.includes(f) ? prev.replace(f, '') : prev + f)
-  }
+  }, [])
 
-  function copyRegex() {
+  const copyRegex = useCallback(() => {
     navigator.clipboard?.writeText(`/${pattern}/${flags}`).then(() => {
       setCopyOk(true)
       setTimeout(() => setCopyOk(false), 1500)
     })
-  }
+  }, [pattern, flags])
+
+  const selectPattern = useCallback((p: string) => {
+    setPattern(p)
+  }, [])
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-mono">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">
       <header className="border-b border-zinc-800 px-4 py-3 flex items-center gap-3">
         <span className="text-xl">🔧</span>
         <h1 className="text-lg font-bold tracking-tight">RegexCraft</h1>
-        <span className="text-xs text-zinc-500">— interactive regex tester</span>
+        <span className="text-xs text-zinc-500 hidden sm:inline">— interactive regex tester</span>
+        <nav className="ml-auto flex gap-2">
+          <button
+            onClick={() => setReplaceMode(r => !r)}
+            className={`px-2 py-0.5 text-xs rounded border transition-colors ${
+              replaceMode
+                ? 'bg-emerald-900/50 border-emerald-600 text-emerald-300'
+                : 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:text-zinc-200'
+            }`}
+            title="Toggle replace mode"
+          >
+            ✏️ Replace
+          </button>
+          <button
+            onClick={() => setCheatOpen(true)}
+            className="px-2 py-0.5 text-xs rounded border border-zinc-700 bg-zinc-900 text-zinc-400 hover:text-zinc-200 transition-colors"
+            title="Regex cheat sheet"
+          >
+            📖 Cheats
+          </button>
+        </nav>
       </header>
 
-      <main className="max-w-4xl mx-auto p-4 space-y-4">
-        {/* Pattern input */}
-        <section className="space-y-1.5">
-          <label className="text-xs text-zinc-500 uppercase tracking-wider">Pattern</label>
-          <div className="flex gap-2">
-            <span className="text-zinc-500 self-center text-lg">/</span>
-            <input
-              type="text"
-              value={pattern}
-              onChange={e => setPattern(e.target.value)}
-              placeholder="regex pattern"
-              className="flex-1 bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-sm outline-none focus:border-cyan-500 transition-colors font-mono"
-              spellCheck={false}
+      <main className="max-w-6xl mx-auto p-4">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+          {/* Left column — 3/5 */}
+          <div className="lg:col-span-3 space-y-4">
+            <PatternInput
+              pattern={pattern}
+              setPattern={setPattern}
+              flags={flags}
+              setFlags={setFlags}
+              regex={regex}
+              copyOk={copyOk}
+              onCopy={copyRegex}
+              onToggleFlag={toggleFlag}
             />
-            <span className="text-zinc-500 self-center text-lg">/</span>
-            <input
-              type="text"
-              value={flags}
-              onChange={e => setFlags(e.target.value.replace(/[^gimsuy]/g, ''))}
-              className="w-16 bg-zinc-900 border border-zinc-700 rounded px-2 py-2 text-sm outline-none focus:border-cyan-500 transition-colors text-center"
-              spellCheck={false}
+
+            <TestStringInput
+              testStr={testStr}
+              setTestStr={setTestStr}
+              replaceMode={replaceMode}
+              replaceStr={replaceStr}
+              setReplaceStr={setReplaceStr}
             />
-          </div>
-          <div className="flex gap-2 flex-wrap">
-            {['g', 'i', 'm', 's', 'u', 'y'].map(f => (
-              <button
-                key={f}
-                onClick={() => toggleFlag(f)}
-                className={`px-2 py-0.5 text-xs rounded border transition-colors ${
-                  flags.includes(f)
-                    ? 'bg-cyan-900/50 border-cyan-600 text-cyan-300'
-                    : 'bg-zinc-900 border-zinc-700 text-zinc-500 hover:border-zinc-500'
-                }`}
-              >
-                {f}
-              </button>
-            ))}
-            <button
-              onClick={copyRegex}
-              className="ml-auto px-2 py-0.5 text-xs rounded border border-zinc-700 text-zinc-400 hover:text-zinc-200 transition-colors"
-            >
-              {copyOk ? '✓ copied' : '📋 copy'}
-            </button>
-          </div>
-          {!regex.ok && (
-            <p className="text-red-400 text-xs">⚠ {regex.error}</p>
-          )}
-        </section>
 
-        {/* Test string */}
-        <section className="space-y-1.5">
-          <label className="text-xs text-zinc-500 uppercase tracking-wider">Test String</label>
-          <textarea
-            value={testStr}
-            onChange={e => setTestStr(e.target.value)}
-            rows={6}
-            className="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-sm outline-none focus:border-cyan-500 transition-colors font-mono resize-y"
-            spellCheck={false}
-          />
-        </section>
+            <ResultsDisplay
+              matches={matches}
+              testStr={testStr}
+              regexOk={regex.ok}
+              replaceOutput={replaceOutput}
+              replaceMode={replaceMode}
+            />
 
-        {/* Results */}
-        <section className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <label className="text-xs text-zinc-500 uppercase tracking-wider">Matches</label>
-            {matches && (
-              <span className="text-xs text-zinc-500">
-                {matches.length} match{matches.length !== 1 ? 'es' : ''}
-              </span>
+            <MatchDetails matches={matches} />
+          </div>
+
+          {/* Right column — 2/5 */}
+          <div className="lg:col-span-2 space-y-4">
+            {!replaceMode && (
+              <RegexExplainer pattern={pattern} regexOk={regex.ok} />
             )}
-          </div>
-          <div
-            className="w-full min-h-[80px] bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-sm font-mono whitespace-pre-wrap break-all"
-            dangerouslySetInnerHTML={{ __html: highlighted || testStr || <span className="text-zinc-600">no input</span> as any }}
-          />
-        </section>
 
-        {/* Match details */}
-        {matches && matches.length > 0 && (
-          <section className="space-y-1.5">
-            <label className="text-xs text-zinc-500 uppercase tracking-wider">Details</label>
-            <div className="space-y-1 max-h-48 overflow-y-auto">
-              {matches.map((m, i) => (
-                <div key={i} className="bg-zinc-900 border border-zinc-800 rounded px-3 py-1.5 text-xs">
-                  <span className="text-zinc-500">#{i + 1} </span>
-                  <span className="text-cyan-300">"{m.full}"</span>
-                  <span className="text-zinc-600"> at {m.index}</span>
-                  {m.groups.length > 0 && (
-                    <span className="ml-2 text-zinc-400">
-                      → groups: [{m.groups.map((g, j) => (
-                        <span key={j} className={g ? 'text-green-300' : 'text-zinc-600'}>
-                          {j > 0 ? ', ' : ''}"{g ?? 'undefined'}"
-                        </span>
-                      ))}]
-                    </span>
-                  )}
+            {/* Performance summary */}
+            <section className="space-y-1.5">
+              <label className="text-xs text-zinc-500 uppercase tracking-wider">Stats</label>
+              <div className="bg-zinc-900 border border-zinc-800 rounded px-3 py-2 text-xs text-zinc-400 space-y-1">
+                <div className="flex justify-between">
+                  <span>Pattern length</span>
+                  <span className="text-zinc-300">{pattern.length} chars</span>
                 </div>
-              ))}
-            </div>
-          </section>
-        )}
+                <div className="flex justify-between">
+                  <span>Test string</span>
+                  <span className="text-zinc-300">{testStr.length} chars, {testStr.split('\n').length} lines</span>
+                </div>
+                {matches && (
+                  <div className="flex justify-between">
+                    <span>Matches found</span>
+                    <span className="text-cyan-300">{matches.length}</span>
+                  </div>
+                )}
+              </div>
+            </section>
 
-        <p className="text-[10px] text-zinc-700 text-center pt-2">
-          RegexCraft — built with React + TypeScript + Tailwind v4
-        </p>
+            {/* Quick reference sidebar */}
+            <section className="space-y-1.5">
+              <label className="text-xs text-zinc-500 uppercase tracking-wider">Quick Reference</label>
+              <div className="bg-zinc-900 border border-zinc-800 rounded px-3 py-2 text-xs space-y-1">
+                {[
+                  ['\\d', 'digit'],
+                  ['\\w', 'word'],
+                  ['\\s', 'space'],
+                  ['.', 'any'],
+                  ['*', '0+'],
+                  ['+', '1+'],
+                  ['?', 'opt'],
+                  ['|', 'OR'],
+                ].map(([tok, desc]) => (
+                  <div key={tok} className="flex justify-between">
+                    <code className="text-amber-300 font-mono">{tok}</code>
+                    <span className="text-zinc-500">{desc}</span>
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={() => setCheatOpen(true)}
+                className="text-xs text-cyan-500 hover:text-cyan-400 transition-colors mt-1"
+              >
+                Full cheat sheet →
+              </button>
+            </section>
+          </div>
+        </div>
+
+        <footer className="mt-8 pt-4 border-t border-zinc-800 flex flex-wrap items-center justify-between gap-2 text-[10px] text-zinc-700">
+          <span>RegexCraft</span>
+          <span>React + TypeScript + Vite + Tailwind v4</span>
+          <span>Zero regex libs — pure JS RegExp</span>
+        </footer>
       </main>
+
+      <CheatSheet
+        open={cheatOpen}
+        onClose={() => setCheatOpen(false)}
+        onSelectPattern={selectPattern}
+      />
     </div>
   )
 }
-
-function escapeHtml(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-}
-
-export default App
