@@ -1,5 +1,26 @@
 # EVOLUTION.md — RegexCraft
 
+## v0.8.0 — Regex Syntax Linter
+
+### New features
+- **Regex Syntax Linter**: Real-time static analysis catches common regex mistakes before runtime. Detects:
+  - Empty character classes `[]`
+  - Unclosed character classes `[`
+  - Unclosed/unmatched groups `(`, `)`
+  - Invalid quantifiers at start or after alternation
+  - Unknown escape sequences
+  - Duplicate flags in `(?...)` groups
+  - Greedy `.*` (suggests `.*?` for better performance)
+  - Dangling quantifiers after alternation groups
+- Issues displayed as warnings (amber) or errors (red) below pattern input
+
+### Code quality
+- New `lib/regexLinter.ts` with `LintIssue` type and `lintRegex()` function.
+- Integrated into `PatternInput` component via `useMemo` for efficient re-linting.
+
+### Performance
+- Build: 233 KB JS (main), 157 KB JS (visualizer), 20 KB CSS.
+
 ## v0.7.0 — Test Case Management + Expanded Pattern Library
 
 ### New features

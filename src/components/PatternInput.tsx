@@ -1,4 +1,6 @@
+import { useMemo } from 'react'
 import type { RegexResult } from '../types'
+import { lintRegex } from '../lib/regexLinter'
 
 interface Props {
   pattern: string
@@ -14,6 +16,8 @@ interface Props {
 const ALL_FLAGS = ['g', 'i', 'm', 's', 'u', 'y', 'd'] as const
 
 export default function PatternInput({ pattern, setPattern, flags, setFlags, regex, copyOk, onCopy, onToggleFlag }: Props) {
+  const lintIssues = useMemo(() => lintRegex(pattern), [pattern])
+
   return (
     <section className="space-y-1.5">
       <label className="text-xs text-zinc-500 uppercase tracking-wider">Pattern</label>
@@ -60,6 +64,19 @@ export default function PatternInput({ pattern, setPattern, flags, setFlags, reg
           {copyOk ? '✓ copied' : '📋 copy'}
         </button>
       </div>
+      {lintIssues.length > 0 && (
+        <div className="space-y-1">
+          {lintIssues.map((issue, idx) => (
+            <p
+              key={idx}
+              className={`text-xs ${issue.type === 'error' ? 'text-red-400' : 'text-amber-400'}`}
+              role="alert"
+            >
+              {issue.type === 'error' ? '⚠' : '⚡'} {issue.message}
+            </p>
+          ))}
+        </div>
+      )}
       {!regex.ok && (
         <p className="text-red-400 text-xs" role="alert">⚠ {regex.error}</p>
       )}
