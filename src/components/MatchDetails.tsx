@@ -3,9 +3,10 @@ import type { MatchResult } from '../types'
 
 interface Props {
   matches: MatchResult[] | null
+  hasIndices?: boolean
 }
 
-export default function MatchDetails({ matches }: Props) {
+export default function MatchDetails({ matches, hasIndices }: Props) {
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null)
 
   if (!matches || matches.length === 0) return null
@@ -27,14 +28,23 @@ export default function MatchDetails({ matches }: Props) {
               <span className="text-zinc-500">#{i + 1} </span>
               <span className="text-cyan-300">&ldquo;{m.full}&rdquo;</span>
               <span className="text-zinc-600"> at {m.index}</span>
+              {hasIndices && m.indices && (
+                <>
+                  <span className="text-zinc-600 ml-2">[{m.indices[0][0]}, {m.indices[0][1]})</span>
+                  {m.indices.slice(1).map((g, gi) => (
+                    <span key={gi} className="text-zinc-600 ml-1">
+                      [{g[0] === -1 ? '?' : g[0]}, {g[1] === -1 ? '?' : g[1]})
+                    </span>
+                  ))}
+                </>
+              )}
               {m.groups.length > 0 && (
                 <span className="ml-2 text-zinc-400">
-                  → groups: [{m.groups.map((g, j) => (
+                  &rarr; groups: [{m.groups.map((g, j) => (
                     <span key={j} className={g ? 'text-green-300' : 'text-zinc-600'}>
                       {j > 0 ? ', ' : ''}&ldquo;{g ?? 'undefined'}&rdquo;
                     </span>
-                  ))}]
-                </span>
+                  ))}]</span>
               )}
             </div>
             <button

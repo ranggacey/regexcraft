@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef, Suspense, lazy } from 'react'
 import type { MatchResult } from './types'
 import { encodeState, decodeState, detectCatastrophicPattern } from './lib/utils'
 import PatternInput from './components/PatternInput'
@@ -8,7 +8,10 @@ import MatchDetails from './components/MatchDetails'
 import RegexExplainer from './components/RegexExplainer'
 import CheatSheet from './components/CheatSheet'
 import SavedPatterns from './components/SavedPatterns'
+import TestCases from './components/TestCases'
 import BenchmarkMode from './components/BenchmarkMode'
+
+const RegexVisualizer = lazy(() => import('./components/RegexVisualizer'))
 
 function loadFromHash(): { pattern: string; flags: string; testStr: string } | null {
   const hash = location.hash.replace(/^#/, '')
@@ -80,16 +83,21 @@ export default function App() {
     const t0 = performance.now()
     const ms: MatchResult[] = []
     const re = new RegExp(regex.re.source, regex.re.flags.includes('g') ? regex.re.flags : regex.re.flags + 'g')
+    const hasIndices = flags.includes('d')
     let m: RegExpExecArray | null
     while ((m = re.exec(testStr)) !== null) {
       const groups: (string | undefined)[] = []
       for (let i = 1; i < m.length; i++) groups.push(m[i])
-      ms.push({ full: m[0], groups, index: m.index })
+      const match: MatchResult = { full: m[0], groups, index: m.index }
+      if (hasIndices && m.indices) {
+        match.indices = m.indices as [number, number][]
+      }
+      ms.push(match)
       if (!re.global) break
     }
     setExecTime(Math.round(performance.now() - t0))
     return ms
-  }, [regex, testStr])
+  }, [regex, testStr, flags])
 
   const replaceOutput = useMemo(() => {
     if (!replaceMode || !regex.ok || !testStr) return null
@@ -208,7 +216,26 @@ export default function App() {
               <RegexExplainer pattern={pattern} regexOk={regex.ok} />
             )}
 
+            {!replaceMode && (
+              <Suspense fallback={
+                <section className="space-y-2">
+                  <label className="text-xs text-zinc-500 uppercase tracking-wider">Railroad Diagram</label>
+                  <div className="bg-zinc-900 border border-zinc-800 rounded p-3 min-h-[120px] overflow-x-auto">
+                    <div className="flex items-center justify-center h-[120px] text-zinc-500 text-xs">Loading diagram…</div>
+                  </div>
+                </section>
+              }>
+                <RegexVisualizer pattern={pattern} regexOk={regex.ok} />
+              </Suspense>
+            )}
+
             <SavedPatterns onSelect={selectSavedPattern} />
+
+            <TestCases
+              regex={{ ok: regex.ok }}
+              testStr={testStr}
+              matches={matches}
+            />
 
             {/* Stats */}
             <section className="space-y-1.5">

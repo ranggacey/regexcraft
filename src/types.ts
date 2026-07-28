@@ -2,6 +2,15 @@ export interface MatchResult {
   full: string
   groups: (string | undefined)[]
   index: number
+  indices?: [number, number][]
+}
+
+export interface TestCase {
+  id: string
+  name: string
+  testStr: string
+  expectedMatches?: string[]
+  createdAt: number
 }
 
 export interface SavedPattern {
@@ -9,7 +18,9 @@ export interface SavedPattern {
   name: string
   pattern: string
   flags: string
+  testCases: TestCase[]
   createdAt: number
+  updatedAt: number
 }
 
 export type RegexResult =
@@ -33,14 +44,40 @@ export const AVAILABLE_FLAGS: FlagDef[] = [
 ]
 
 export const COMMON_PATTERNS = [
-  { pattern: '\\d+', desc: 'Digits (one or more)' },
-  { pattern: '\\w+', desc: 'Word chars (alphanumeric + _)' },
-  { pattern: '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}', desc: 'Email' },
-  { pattern: 'https?://[\\w./?=&-]+', desc: 'URL' },
-  { pattern: '^\\d{4}-\\d{2}-\\d{2}$', desc: 'Date YYYY-MM-DD' },
-  { pattern: '^(\\+\\d{1,3})?\\s?\\d{10,}$', desc: 'Phone number' },
-  { pattern: '(?<=@)\\w+', desc: 'Username after @ (lookbehind)' },
-  { pattern: '(?:https?://)?(?:www\\.)?[\\w-]+\\.\\w{2,}', desc: 'Domain name' },
+  { category: 'Text', pattern: '\\d+', desc: 'Digits (one or more)' },
+  { category: 'Text', pattern: '\\w+', desc: 'Word chars (alphanumeric + _)' },
+  { category: 'Text', pattern: '[a-zA-Z]+', desc: 'Letters only' },
+  { category: 'Text', pattern: '[^\\s]+', desc: 'Non-whitespace sequence' },
+  { category: 'Text', pattern: '[\\u00C0-\\u017F]+', desc: 'Accented Latin letters' },
+
+  { category: 'Email', pattern: '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}', desc: 'Standard email' },
+  { category: 'Email', pattern: '^([^@\\s]+)@((?:[\\w-]+\\.)+[\\w]{2,})$', desc: 'Email with domain validation' },
+
+  { category: 'URL', pattern: 'https?://[\\w./?=&-]+', desc: 'HTTP/URL' },
+  { category: 'URL', pattern: '^(https?://)?(www\\.)?[\\w-]+\\.\\w{2,}(/\\S*)?$', desc: 'URL with optional protocol' },
+  { category: 'URL', pattern: '(?:https?://)?(?:www\\.)?[\\w-]+\\.\\w{2,}', desc: 'Domain name' },
+
+  { category: 'Date/Time', pattern: '^\\d{4}-\\d{2}-\\d{2}$', desc: 'ISO date YYYY-MM-DD' },
+  { category: 'Date/Time', pattern: '^\\d{2}/\\d{2}/\\d{4}$', desc: 'US date MM/DD/YYYY' },
+  { category: 'Date/Time', pattern: '^\\d{2}:\\d{2}(:\\d{2})?$', desc: 'Time HH:MM or HH:MM:SS' },
+  { category: 'Date/Time', pattern: '^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}', desc: 'ISO datetime' },
+
+  { category: 'Phone', pattern: '^(\\+\\d{1,3})?\\s?\\d{10,}$', desc: 'Phone with optional country code' },
+  { category: 'Phone', pattern: '^\\(\\d{3}\\)\\s?\\d{3}-\\d{4}$', desc: 'US phone (XXX) XXX-XXXX' },
+
+  { category: 'IP', pattern: '^((25[0-5]|2[0-4]\\d|[01]?\\d?\\d)\\.){3}(25[0-5]|2[0-4]\\d|[01]?\\d?\\d)$', desc: 'IPv4 address' },
+  { category: 'IP', pattern: '^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$', desc: 'IPv6 full' },
+
+  { category: 'Code', pattern: '^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$', desc: 'Hex color' },
+  { category: 'Code', pattern: '^[A-Fa-f0-9]{32}$', desc: 'MD5 hash' },
+  { category: 'Code', pattern: '^[A-Fa-f0-9]{40}$', desc: 'SHA-1 hash' },
+  { category: 'Code', pattern: '^[A-Fa-f0-9]{64}$', desc: 'SHA-256 hash' },
+  { category: 'Code', pattern: '^[A-Za-z0-9+/]{40,}={0,2}$', desc: 'Base64 string' },
+  { category: 'Code', pattern: '^\\d{1,3}(,\\d{3})*(\\.\\d+)?$', desc: 'Number with commas' },
+
+  { category: 'Validation', pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$', desc: 'Strong password (8+, upper, lower, digit)' },
+  { category: 'Validation', pattern: '^\\w+([.-]?\\w+)*@\\w+([.-]?\\w+)*(\\.\\w{2,3})+$', desc: 'Email strict' },
+  { category: 'Validation', pattern: '^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$', desc: 'IPv4 strict' },
 ]
 
 export const SYNTAX_REFERENCE = [

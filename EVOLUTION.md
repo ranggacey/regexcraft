@@ -1,5 +1,32 @@
 # EVOLUTION.md — RegexCraft
 
+## v0.7.0 — Test Case Management + Expanded Pattern Library
+
+### New features
+- **Test Cases per Saved Pattern**: Save multiple named test strings with each pattern. Select a pattern, add test cases, click to copy test string to main input. Enables regression testing patterns against multiple inputs.
+- **Expanded Common Patterns Library**: Categorized patterns (Text, Email, URL, Date/Time, Phone, IP, Code, Validation) with 30+ ready-to-use regexes. Grouped by category in cheat sheet modal.
+- **Test Cases Sidebar Panel**: New collapsible panel in right sidebar showing saved patterns dropdown + test case list with add/edit/delete.
+
+### Code quality
+- Added `TestCase` and extended `SavedPattern` types with `testCases[]` and `updatedAt` fields.
+- Migration logic in `getSavedPatterns()` handles legacy localStorage data.
+- New utility functions: `addTestCase()`, `deleteTestCase()`, `updateSavedPattern()`.
+
+### Performance
+- Build: 226 KB JS (main), 157 KB JS (visualizer chunk), 19 KB CSS.
+- Test case state stays in localStorage, no bundle impact.
+
+## v0.6.0 — Regex Visualizer + Enhanced Explainer + Indices Flag Support
+
+### New features
+- **Regex Visualizer (Railroad Diagram)**: Lazy-loaded sidebar panel showing interactive regex railroad diagram via `@regexper/render`. Splits into separate chunk (157 KB) to keep main bundle lean.
+- **Enhanced Regex Explainer**: Comprehensive token parser now handles escape sequences (`\xNN`, `\uNNNN`, `\u{NNNNNN}`), character classes `[...]`, quantifiers `{n,m}`, group constructs (`(?:)`, `(?=)`, `(?!), `(?<=)`, `(?<!)`, `(?>)`, `(?#)`, `(?<name>)`, `(?P<name>)`), backreferences, Unicode properties (`\p{}`, `\P{}`), and control characters.
+- **'d' flag (Indices) support**: When `d` flag is enabled, match details show start/end indices for full match and each capture group. Updates `MatchResult` type with optional `indices` field.
+
+### Performance
+- Lazy-load RegexVisualizer via `React.lazy` + `Suspense` — main bundle stays ~220 KB, visualizer in separate 157 KB chunk.
+- Build: 220 KB JS (main), 157 KB JS (visualizer chunk), 19 KB CSS.
+
 ## v0.5.0 — Regex Benchmark Mode
 
 ### New features
