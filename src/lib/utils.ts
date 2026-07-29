@@ -240,6 +240,46 @@ export function deleteTestCase(patternId: string, testCaseId: string): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(patterns))
 }
 
+// History: Recent regex sessions
+const HISTORY_KEY = 'regexcraft_history'
+
+export interface HistoryEntry {
+  id: string
+  pattern: string
+  flags: string
+  testStr: string
+  timestamp: number
+}
+
+export function getHistory(): HistoryEntry[] {
+  try {
+    const data = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]')
+    return data.slice(0, 20) // Keep last 20
+  } catch {
+    return []
+  }
+}
+
+export function addToHistory(pattern: string, flags: string, testStr: string): void {
+  if (!pattern.trim()) return
+  const history = getHistory()
+  const entry: HistoryEntry = {
+    id: crypto.randomUUID(),
+    pattern,
+    flags,
+    testStr: testStr.slice(0, 500), // Truncate test string for storage
+    timestamp: Date.now(),
+  }
+  // Avoid duplicates (same pattern + flags)
+  const filtered = history.filter(h => !(h.pattern === pattern && h.flags === flags))
+  const updated = [entry, ...filtered].slice(0, 20)
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(updated))
+}
+
+export function clearHistory(): void {
+  localStorage.removeItem(HISTORY_KEY)
+}
+
 const EXPLAIN_MAP: Record<string, string> = {
   // Anchors
   '^': 'start of string/line (with m flag)',

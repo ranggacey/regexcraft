@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef, Suspense, lazy } from 'react'
 import type { MatchResult } from './types'
-import { encodeState, decodeState, detectCatastrophicPattern, getSavedPatterns } from './lib/utils'
+import { encodeState, decodeState, detectCatastrophicPattern, getSavedPatterns, addToHistory } from './lib/utils'
 import PatternInput from './components/PatternInput'
 import TestStringInput from './components/TestStringInput'
 import ResultsDisplay from './components/ResultsDisplay'
@@ -12,6 +12,7 @@ import SavedPatterns from './components/SavedPatterns'
 import TestCases from './components/TestCases'
 import TestCaseRunner from './components/TestCaseRunner'
 import BenchmarkMode from './components/BenchmarkMode'
+import HistoryPanel from './components/HistoryPanel'
 
 const RegexVisualizer = lazy(() => import('./components/RegexVisualizer'))
 
@@ -72,6 +73,15 @@ export default function App() {
     if (location.hash !== newHash) {
       history.replaceState(null, '', newHash)
     }
+  }, [pattern, flags, testStr])
+
+  // Save to history on pattern/flags change (debounced via ref)
+  const historyRef = useRef<{ pattern: string; flags: string }>({ pattern: '', flags: '' })
+  useEffect(() => {
+    if (pattern === historyRef.current.pattern && flags === historyRef.current.flags) return
+    historyRef.current = { pattern, flags }
+    const timer = setTimeout(() => addToHistory(pattern, flags, testStr), 1500)
+    return () => clearTimeout(timer)
   }, [pattern, flags, testStr])
 
   const regex = useMemo(() => {
@@ -238,6 +248,8 @@ export default function App() {
             )}
 
             <SavedPatterns onSelect={selectSavedPattern} />
+
+            <HistoryPanel onSelect={selectSavedPattern} />
 
             <TestCases
               regex={{ ok: regex.ok }}
