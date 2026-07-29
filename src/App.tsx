@@ -5,6 +5,7 @@ import PatternInput from './components/PatternInput'
 import TestStringInput from './components/TestStringInput'
 import ResultsDisplay from './components/ResultsDisplay'
 import MatchDetails from './components/MatchDetails'
+import MatchGroupsViewer from './components/MatchGroupsViewer'
 import RegexExplainer from './components/RegexExplainer'
 import CheatSheet from './components/CheatSheet'
 import SavedPatterns from './components/SavedPatterns'
@@ -213,6 +214,8 @@ export default function App() {
             />
 
             <MatchDetails matches={matches} />
+
+            <MatchGroupsViewer matches={matches} activeIndex={matchIndex} />
           </div>
 
           {/* Right column — 2/5 */}

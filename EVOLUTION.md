@@ -1,5 +1,18 @@
 # EVOLUTION.md — RegexCraft
 
+## v0.10.0 — Capture Groups Viewer
+
+### New features
+- **Match Groups Viewer**: Table display of capture groups for active match. Shows group number, name (for named groups), value, and index positions. Helps understand complex regexes with many capture groups. Uses indices flag data when available.
+
+### Code quality
+- New `MatchGroupsViewer` component in `components/MatchGroupsViewer.tsx`.
+- Integrated into main App after MatchDetails panel.
+- Supports both numbered groups and named groups (future-ready).
+
+### Performance
+- Build: 236 KB JS (main), 157 KB JS (visualizer), 21 KB CSS.
+
 ## v0.9.0 — Match Navigation + Active Highlight
 
 ### New features
