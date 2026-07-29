@@ -1,5 +1,18 @@
 # EVOLUTION.md — RegexCraft
 
+## v0.11.0 — Recent History Panel
+
+### New features
+- **Recent History Panel**: Auto-saves last 20 regex sessions (pattern + flags + test string). Shows pattern preview with flags, timestamp, and character count. Click to restore. Clear all button. Debounced save (1.5s after last change) to avoid spamming localStorage. Deduplicates entries with same pattern + flags.
+
+### Code quality
+- New `lib/utils.ts` functions: `getHistory()`, `addToHistory()`, `clearHistory()`, `HistoryEntry` interface.
+- New `components/HistoryPanel.tsx` — collapsible list showing last 5 entries (expandable to 20).
+- History auto-saves on pattern/flags change via debounced effect in App.tsx.
+
+### Performance
+- Build: 238 KB JS (main), 157 KB JS (visualizer), 22 KB CSS.
+
 ## v0.10.0 — Capture Groups Viewer
 
 ### New features
